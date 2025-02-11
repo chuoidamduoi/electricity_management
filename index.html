@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản Lý Tiền Điện</title>
+    <!-- Nhúng file CSS của bạn và Foundation CSS -->
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://dhbhdrzi4tiry.cloudfront.net/cdn/sites/foundation.min.css" />
+</head>
+
+<body>
+    <header>
+        <h1>Điện LỰC ÔNG SINH</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#" data-target="manage-bills" class="active">Quản lý tiền điện</a></li>
+            <li><a href="#" data-target="manage-households">Quản lý hộ</a></li>
+            <li><a href="#" data-target="notifications">Gửi thông báo</a></li>
+            <li><a href="#" data-target="reports">Báo cáo</a></li>
+        </ul>
+    </nav>
+    <main>
+        <!-- Section Quản lý hộ tham gia -->
+        <section id="manage-households" class="section-content">
+            <h2>Quản Lý Hộ Tham Gia</h2>
+            <button onclick="addHousehold()">Thêm mới</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Hộ</th>
+                        <th>Họ Tên</th>
+                        <th>Số Hecta</th>
+                        <th>Ngày Tham Gia</th>
+                        <th>Trạng Thái</th>
+                        <th>Email</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="household-list">
+                    <!-- Các hàng sẽ được thêm động qua JavaScript -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Section Quản lý tiền điện -->
+        <section id="manage-bills" class="section-content active-section">
+            <h2>Quản Lý Tiền Điện</h2>
+            <div>
+                <label for="bill-month">Chọn tháng: </label>
+                <input type="month" id="bill-month" />
+            </div>
+            <div>
+                <label for="management-fee">Phí quản lý/kwh: </label>
+                <!-- Sử dụng input type text để hiển thị số có dấu phẩy -->
+                <input type="number" id="management-fee" class="format-number" value="100" placeholder="Nhập phí quản lý" />
+            </div>
+            <div>
+                <label for="total-amount">Tổng tiền: </label>
+                <input type="number" id="total-amount" class="format-number" placeholder="Nhập tổng tiền" />
+            </div>
+            <div>
+                <label for="kwh-amount">Giá 1 kwh: </label>
+                <input type="number" id="kwh-amount" class="format-number" disabled />
+            </div>
+            <button onclick="loadElectricityForm()">Tải danh sách điện</button>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã Hộ</th>
+                        <th>Số cũ</th>
+                        <th>Số mới</th>
+                        <th>Điện tiêu thụ</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-list">
+                    <!-- Các hàng sẽ được tạo động qua JavaScript -->
+                </tbody>
+            </table>
+            <button onclick="computeBillAmounts()">Tính toán thành tiền</button>
+        </section>
+
+        <!-- Section Báo cáo -->
+        <section id="reports" class="section-content">
+            <h2>Xem Báo Cáo</h2>
+            <input type="month" id="report-month" />
+            <button onclick="viewReport()">Xem báo cáo</button>
+            <div id="report-results"></div>
+        </section>
+
+        <!-- Section Gửi thông báo -->
+        <section id="notifications" class="section-content">
+            <h2>Gửi Thông Báo</h2>
+            <input type="month" id="notification-month" />
+            <button onclick="sendNotifications()">Gửi Thông Báo</button>
+        </section>
+    </main>
+
+    <!-- Nhúng các file script bên ngoài và script chính -->
+    <script src="script.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cssjson@3.0.0/dist/CSSJSON.min.js"></script>
+</body>
+
+</html>
