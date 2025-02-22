@@ -12,7 +12,7 @@
 
 <body>
     <header>
-        <h1>Điện LỰC ÔNG SINH</h1>
+        <h1>Điện LỰC VŨ SINH</h1>
     </header>
     <nav>
         <ul>
@@ -50,22 +50,11 @@
             <h2>Quản Lý Tiền Điện</h2>
             <div>
                 <label for="bill-month">Chọn tháng: </label>
-                <input type="month" id="bill-month" />
+                <div class="flex">
+                    <input type="month" id="bill-month" />
+                    <button onclick="loadElectricityForm()" class="py-10px">Tải danh sách điện</button>
+                </div>
             </div>
-            <div>
-                <label for="management-fee">Phí quản lý/kwh: </label>
-                <!-- Sử dụng input type text để hiển thị số có dấu phẩy -->
-                <input type="number" id="management-fee" class="format-number" value="100" placeholder="Nhập phí quản lý" />
-            </div>
-            <div>
-                <label for="total-amount">Tổng tiền: </label>
-                <input type="number" id="total-amount" class="format-number" placeholder="Nhập tổng tiền" />
-            </div>
-            <div>
-                <label for="kwh-amount">Giá 1 kwh: </label>
-                <input type="number" id="kwh-amount" class="format-number" disabled />
-            </div>
-            <button onclick="loadElectricityForm()">Tải danh sách điện</button>
             <table>
                 <thead>
                     <tr>
@@ -80,7 +69,37 @@
                     <!-- Các hàng sẽ được tạo động qua JavaScript -->
                 </tbody>
             </table>
-            <button onclick="computeBillAmounts()">Tính toán thành tiền</button>
+
+            <div class="submit-bills">
+                <div class="main-border">
+                    <div class="flex">
+                        <div class="w50">
+                            <label for="total-amount">Tổng tiền: </label>
+                            <input type="text" id="total-amount" class="format-number" placeholder="Nhập tổng tiền" />
+                        </div>
+                        <div class="w50">
+                            <label for="kwh-amount">Tổng số điện: </label>
+                            <input type="text" id="kwh-total" class="format-number non-custom-disable" disabled />
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <div class="w50">
+                            <label for="management-fee">Phí quản lý/kwh: </label>
+                            <!-- Sử dụng input type text để hiển thị số có dấu phẩy -->
+                            <input type="text" id="management-fee" class="format-number" value="100"
+                                placeholder="Nhập phí quản lý" />
+                        </div>
+                        <div class="w50">
+                            <label for="kwh-amount">Giá 1 kwh: </label>
+                            <input type="text" id="kwh-amount" class="format-number non-custom-disable" disabled />
+                        </div>
+                    </div>
+                </div>
+                <div class="flex">
+                    <button onclick="computeBillAmounts()" class="danger">Tính toán thành tiền</button>
+                    <button onclick="submitSave()" class="warning save-button" >Lưu</button>
+                </div>
+            </div>
         </section>
 
         <!-- Section Báo cáo -->
@@ -97,13 +116,19 @@
             <input type="month" id="notification-month" />
             <button onclick="sendNotifications()">Gửi Thông Báo</button>
         </section>
+
+        <!-- loading -->
+        <div class="loading">
+            <p class="txt-loading">Đang tải...</p>
+
+        </div>
     </main>
 
     <!-- Nhúng các file script bên ngoài và script chính -->
     <script src="script.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/cssjson@3.0.0/dist/CSSJSON.min.js"></script> -->
-      
+
 </body>
 
 </html>
