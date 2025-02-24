@@ -38,7 +38,7 @@ function setDefaultMonth() {
 
 // --------------------- Các hàm lưu trữ dữ liệu qua Google Sheets ---------------------
 // Chú ý: Thay đổi SCRIPT_URL thành URL Web App đã triển khai từ Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPoWrlQFpe41tv6qnq8m-mVLK4o0osUsnPIJD_PIT2ZhnxJGsOhlgD9MsDugxVqAPK/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7hH-zdEv4CLwrJDsryuviVQcwYWXaBTJxYeNRJRTQkmp8SWIk_51CUJndVNQVJ54u/exec";
 
 // Lấy danh sách HOUSESHOLDS từ Google Sheets
 async function getHouseholds() {
