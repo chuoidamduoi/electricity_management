@@ -98,7 +98,7 @@
                 </div>
                 <div class="flex">
                     <button onclick="computeBillAmounts()" class="danger">Tính toán thành tiền</button>
-                    <button onclick="submitSave()" class="warning save-button" >Lưu</button>
+                    <button onclick="submitSave()" class="warning save-button">Lưu</button>
                 </div>
             </div>
         </section>
@@ -106,16 +106,28 @@
         <!-- Section Báo cáo -->
         <section id="reports" class="section-content">
             <h2>Xem Báo Cáo</h2>
-            <input type="month" id="report-month" />
-            <button onclick="viewReport()">Xem báo cáo</button>
+            <div class="flex">
+                <div class="w50">
+                    <input type="month" id="report-month" />
+                </div>
+                <div class="w50">
+                     <button onclick="viewReport()">Xem báo cáo</button>
+                </div>
+            </div>
             <div id="report-results"></div>
         </section>
 
         <!-- Section Gửi thông báo -->
         <section id="notifications" class="section-content">
             <h2>Gửi Thông Báo</h2>
-            <input type="month" id="notification-month" />
-            <button onclick="sendNotifications()">Gửi Thông Báo</button>
+            <div class="flex">
+                <div class="w50">
+                    <input type="month" id="notification-month" />
+                </div>
+                <div class="w50">
+                     <button onclick="sendNotifications()">Gửi Thông Báo</button>
+                </div>
+            </div>
         </section>
 
         <!-- loading -->

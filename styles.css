@@ -255,11 +255,16 @@ label {
   display: flex;
   justify-content: center;
   align-items: center;
-  text-align: center; 
+  text-align: center;
   display: none;
 }
-.save-button{
+
+.save-button {
   display: none;
+}
+
+[type=text] {
+  color: #333 !important;
 }
 
 /* Responsive Table */
