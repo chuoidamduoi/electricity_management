@@ -18,15 +18,21 @@
         <ul>
             <li><a href="#" data-target="manage-bills" class="active">Quản lý tiền điện</a></li>
             <li><a href="#" data-target="manage-households">Quản lý hộ</a></li>
-            <li><a href="#" data-target="notifications">Gửi thông báo</a></li>
             <li><a href="#" data-target="reports">Báo cáo</a></li>
+            <li><a href="#" data-target="notifications">Gửi thông báo</a></li>
         </ul>
     </nav>
     <main>
         <!-- Section Quản lý hộ tham gia -->
         <section id="manage-households" class="section-content">
             <h2>Quản Lý Hộ Tham Gia</h2>
-            <button onclick="addHousehold()">Thêm mới</button>
+
+            <div class="select-households">
+                <button onclick="getActiveHousehold()">DS hoạt động</button>
+                <button onclick="getUnActiveHousehold()">DS không hoạt động</button>
+            </div>
+
+            <button onclick="addHousehold()" id="addHousehold">Thêm mới</button>
             <table>
                 <thead>
                     <tr>
@@ -108,13 +114,53 @@
             <h2>Xem Báo Cáo</h2>
             <div class="flex">
                 <div class="w50">
-                    <input type="month" id="report-month" />
+                    <select id="report-type">
+                        <option value="overview">Báo cáo tổng hợp</option>
+                        <option value="month-detail">Báo cáo chi tiết từng tháng</option>
+                        <option value="customers">Báo cáo từng khách hàng</option>
+                    </select>
                 </div>
-                <div class="w50">
-                     <button onclick="viewReport()">Xem báo cáo</button>
+                <div class="w50" id="input-reports">
                 </div>
             </div>
-            <div id="report-results"></div>
+            <button onclick="viewReport()">Xem báo cáo</button>
+
+            <div class="main-border" id="info-month-detail">
+                <div class="w50">
+                    <label for="rt-month">Tháng </label>
+                    <input type="text" id="rpt-month" class="format-number custom-disable" disabled/>
+                </div>
+                <div class="flex">
+                    <div class="w50">
+                        <label for="rt-total-amount">Tổng tiền: </label>
+                        <input type="text" id="rpt-total-amount" class="format-number custom-disable" disabled/>
+                    </div>
+                    <div class="w50">
+                        <label for="rt-kwh-amount">Tổng số điện: </label>
+                        <input type="text" id="rpt-kwh-total" class="format-number ncustom-disable" disabled />
+                    </div>
+                </div>
+                <div class="flex">
+                    <div class="w50">
+                        <label for="rt-management-fee">Phí quản lý/kwh: </label>
+                        <!-- Sử dụng input type text để hiển thị số có dấu phẩy -->
+                        <input type="text" id="rpt-management-fee" class="format-number custom-disable" disabled/>
+                    </div>
+                    <div class="w50">
+                        <label for="rt-kwh-amount">Giá 1 kwh: </label>
+                        <input type="text" id="rpt-kwh-amount" class="format-number custom-disable" disabled />
+                    </div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                    </tr>
+                </thead>
+                <tbody id="report-results">
+                </tbody>
+            </table>
+
         </section>
 
         <!-- Section Gửi thông báo -->
@@ -125,7 +171,7 @@
                     <input type="month" id="notification-month" />
                 </div>
                 <div class="w50">
-                     <button onclick="sendNotifications()">Gửi Thông Báo</button>
+                    <button onclick="sendNotifications()">Gửi Thông Báo</button>
                 </div>
             </div>
         </section>

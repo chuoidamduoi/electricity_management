@@ -1,9 +1,12 @@
 // --------------------- Khi trang DOM đã tải xong ---------------------
 let curBills
+let select_households = ''
 document.addEventListener('DOMContentLoaded', () => {
-    loadHouseholds(); // Load danh sách hộ khi trang tải
     setNavigationSection();
     setDefaultMonth();
+    setDefaultSelectHouseHold('ACTIVE');
+    loadHouseholds(); // Load danh sách hộ khi trang tải
+
 });
 
 // --------------------- Navigation: Chuyển đổi giữa các section ---------------------
@@ -36,20 +39,49 @@ function setDefaultMonth() {
     });
 };
 
+function setDefaultSelectHouseHold(type) {
+    let activeBtn = document.querySelector('button[onclick="getActiveHousehold()"]');
+    let unactiveBtn = document.querySelector('button[onclick="getUnActiveHousehold()"]');
+    let addHouseholdBtn = document.getElementById("addHousehold");
+
+    if (type === "ACTIVE") {
+        activeBtn.classList.add("active");
+        unactiveBtn.classList.remove("active");
+        addHouseholdBtn.style.display = "block"; // Hiện nút "Thêm mới"
+    } else if (type === "UNACTIVE") {
+        unactiveBtn.classList.add("active");
+        activeBtn.classList.remove("active");
+        addHouseholdBtn.style.display = "none"; // Ẩn nút "Thêm mới"
+    }
+    select_households = type
+}
+
+function getActiveHousehold() {
+    select_households = 'ACTIVE'
+    setDefaultSelectHouseHold(select_households)
+    loadHouseholds(select_households);
+}
+
+function getUnActiveHousehold() {
+    select_households = 'UNACTIVE'
+    setDefaultSelectHouseHold(select_households)
+    loadHouseholds(select_households);
+}
 // --------------------- Các hàm lưu trữ dữ liệu qua Google Sheets ---------------------
 // Chú ý: Thay đổi SCRIPT_URL thành URL Web App đã triển khai từ Render
 const SCRIPT_URL = "https://electricity-management-server.onrender.com/api";
-
+// const SCRIPT_URL = " http://localhost:3000/api"
 // Lấy danh sách HOUSESHOLDS từ Google Sheets
-async function getHouseholds() {
+async function getHouseholds(type) {
     isLoading(true)
     try {
-        const response = await fetch(`${SCRIPT_URL}/getHouseholds`);
+        const response = await fetch(`${SCRIPT_URL}/getHouseholds/${type}`);
         const rs = await response.json();
         isLoading(false)
         if (rs.success) return rs.data; // Trả về mảng đối tượng
         else return []
     } catch (error) {
+        isLoading(false)
         console.error("Error fetching households:", error);
         return [];
     }
@@ -69,6 +101,7 @@ async function callAddHouseholds(household) {
         isLoading(false)
 
     } catch (error) {
+        isLoading(false)
         console.error("Error setting households:", error);
     }
 }
@@ -86,6 +119,7 @@ async function callEditHouseholds(household) {
         console.log("Response:", response);
         isLoading(false)
     } catch (error) {
+        isLoading(false)
         console.error("Error setting households:", error);
     }
 }
@@ -104,6 +138,7 @@ async function getBills(strMonth) {
         }
         else return []
     } catch (error) {
+        isLoading(false)
         console.error("Error fetching bills:", error);
         return [];
     }
@@ -127,8 +162,46 @@ async function setBills(bills) {
         isSave(false)
         return result;
     } catch (error) {
+        isLoading(false)
         console.error('Error:', error);
         throw error;
+    }
+}
+
+//Báo cáo
+async function getDataRpt(type, input) {
+    isLoading(true);
+    try {
+        let api = "";
+        let v_input = "";
+
+        switch (type) {
+            case "overview":
+                api = "getOverviewBill";
+                break;
+            case "month-detail":
+                api = "getDetailBillByMonth";
+                v_input = `/${input}`;
+                break;
+            case "customers":
+                api = "getDetailBillByCustomer";
+                v_input = `/${input}`;
+                break;
+            default:
+                isLoading(false);
+                return []; // Trả về mảng rỗng nếu type không hợp lệ
+        }
+
+        const response = await fetch(`${SCRIPT_URL}/${api}${v_input}`);
+        const rs = await response.json();
+
+        isLoading(false);
+
+        return rs.success ? rs.data : [];
+    } catch (error) {
+        isLoading(false);
+        console.error("Error fetching data report:", error);
+        return [];
     }
 }
 
@@ -154,7 +227,6 @@ document.addEventListener("focus", function (e) {
         e.target.value = e.target.value.replace(/,/g, "");
     }
 }, true);
-
 function convertDate(dateString) {
     // Create a new Date object
     const date = new Date(dateString);
@@ -176,11 +248,22 @@ function convertMonth(billMonth) {
     const formattedMonth = `${month}${year}`;
     return formattedMonth;
 }
+function convertMonth2(dateString) {
+    // Create a new Date object
+    const date = new Date(dateString);
 
+    // Get the day, month, and year
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = date.getFullYear();
+
+    // Format the date as dd/mm/yyyy
+    const formattedDate = `${month}/${year}`
+    return formattedDate;
+}
 function convertNull(str) {
     return str == (null) ? '' : str
 }
-
 function isLoading(isLoading) {
     let submitButton = document.querySelector(".loading");
     if (submitButton) {
@@ -213,7 +296,6 @@ function validateElectricityInputs() {
         }
     }
 }
-
 document.addEventListener("input", function (event) {
     if (event.target.closest("#bill-list")) {
         validateElectricityInputs();
@@ -343,21 +425,19 @@ async function computeBillAmounts() {
 }
 
 async function submitSave() {
-    setBills(curBills)
+    await setBills(curBills)
     alert('Lưu dữ liệu thành công!');
 }
-
 // --------------------- Quản lý hộ ---------------------
 async function loadHouseholds() {
-    const households = await getHouseholds();
+    const households = await getHouseholds(select_households);
     const tbody = document.getElementById('household-list');
     tbody.innerHTML = '';
     households.forEach(household => {
         const tr = document.createElement('tr');
-        const v_class_status = household.STATUS ? (household.STATUS.toUpperCase() == 'HOẠT ĐỘNG' ? 'active-household' : '') : ''
         tr.innerHTML = `
         <td data-label="Mã Hộ"><input type="text" value="${household.ID}" disabled class="custom-disabled" /></td>
-         <td data-label="Họ tên"><input type="text" value="${household.FULLNAME}" disabled  class="${v_class_status} custom-disabled"/></td>
+         <td data-label="Họ tên"><input type="text" value="${household.FULLNAME}" disabled  class="active-household custom-disabled"/></td>
           <td data-label="Số Hec"><input type="text" value="${household.HECTA}" disabled  class="custom-disabled"  /></td>
            <td data-label="Ngày thgia"><input type="text" value="${convertDate(household.JOINDATE)}" disabled  class="custom-disabled"  /></td>
             <td data-label="Trạng thái"><input type="text" value="${household.STATUS}" disabled   class="custom-disabled" /></td>
@@ -384,7 +464,7 @@ async function addHousehold() {
 }
 
 async function editHousehold(code) {
-    let households = await getHouseholds();
+    let households = await getHouseholds(select_households);
     const index = households.findIndex(h => h.ID === code);
     if (index === -1) return;
     let household = households[index];
@@ -404,7 +484,7 @@ async function editHousehold(code) {
 }
 
 async function changeStatusHousehold(code) {
-    let households = await getHouseholds();
+    let households = await getHouseholds(select_households);
     const index = households.findIndex(h => h.ID === code);
     if (index === -1) return;
     let household = households[index];
@@ -416,76 +496,137 @@ async function changeStatusHousehold(code) {
 }
 
 // --------------------- Báo cáo ---------------------
-function viewReport() {
-    alert('Chức năng chưa hoàn thiện');
-    // const monthInput = document.getElementById('report-month').value;
-    // const reportDiv = document.getElementById('report-results');
-    // reportDiv.innerHTML = '';
-    // if (!monthInput) {
-    //     reportDiv.innerHTML = '<p>Vui lòng chọn tháng/năm để xem báo cáo.</p>';
-    //     return;
-    // }
-    // getBills().then(bills => {
-    //     const billRecord = bills.find(b => b.MONTH === monthInput);
-    //     if (!billRecord) {
-    //         reportDiv.innerHTML = `<p>Không có dữ liệu báo cáo cho tháng ${monthInput}.</p>`;
-    //         return;
-    //     }
-    //     let html = `<h3>Báo cáo tháng ${monthInput}</h3>`;
-    //     html += `<p>Phí quản lý: ${billRecord.MANAFEE}</p>`;
-    //     html += `<p>Tổng tiền trong tháng: ${billRecord.TOTAL_AMOUNT}</p>`;
-    //     html += `<table>
-    //              <thead>
-    //                <tr>
-    //                  <th>Mã Hộ</th>
-    //                  <th>Số Cũ</th>
-    //                  <th>Số Mới</th>
-    //                  <th>Điện tiêu thụ</th>
-    //                  <th>Thành tiền</th>
-    //                </tr>
-    //              </thead>
-    //              <tbody>`;
-    //     billRecord.DETAILS.forEach(detail => {
-    //         html += `<tr>
-    //                <td>${detail.code}</td>
-    //                <td>${detail.oldReading}</td>
-    //                <td>${detail.newReading}</td>
-    //                <td>${detail.consumption}</td>
-    //                <td>${detail.amount}</td>
-    //              </tr>`;
-    //     });
-    //     html += `</tbody></table>`;
-    //     reportDiv.innerHTML = html;
-    // });
+function resetFrontRpt() {
+    const tbody = document.getElementById('report-results');
+    tbody.innerHTML = '';
+    let submitButton = document.querySelector("#info-month-detail");
+    if (submitButton) {
+        submitButton.style.display = "none";
+    }
 }
+
+document.getElementById("report-type").addEventListener("change", function () {
+    resetFrontRpt()
+    const selectedReport = this.value;
+    const inputReports = document.getElementById("input-reports");
+
+    // Xóa nội dung cũ
+    inputReports.innerHTML = "";
+
+    if (selectedReport === "month-detail") {
+        let today = new Date();
+        let year = today.getFullYear();
+        let month = (today.getMonth() + 1).toString().padStart(2, '0'); // Đảm bảo 2 chữ số
+        let currentMonth = `${year}-${month}`;
+
+        // Hiển thị input chọn tháng
+        inputReports.innerHTML = `
+            <input type="month" id="report-month" value="${currentMonth}" />
+        `;
+    } else if (selectedReport === "customers") {
+        // Hiển thị ô nhập mã khách hàng
+        inputReports.innerHTML = `
+            <input type="text" id="customer-id" placeholder="Nhập mã khách hàng" />
+        `;
+    }
+});
+
+function genRpt(type, data) {
+    console.log(type, data);
+
+    const tbody = document.getElementById('report-results');
+    tbody.innerHTML = '';
+    data.forEach(item => {
+        const tr = document.createElement('tr');
+        if (type == 'overview') {
+            tr.innerHTML = `
+        <td data-label="Tháng"><input type="text" value="${convertMonth2(item.MONTH)}" disabled class="active-household  custom-disabled" /></td>
+         <td data-label="Phí quản lý/kwh"><input type="text" value="${formatNumber(item.MANAFEE)}" disabled  class="format-number custom-disabled"/></td>
+          <td data-label="Giá 1kwh"><input type="text" value="${formatNumber(item.KWH_AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
+           <td data-label="Tổng tiền"><input type="text" value="${formatNumber(item.TOTAL_AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
+            <td data-label="Tổng điện tiêu thụ "><input type="text" value="${formatNumber(item.TOTAL_COMSUMPTION)}" disabled   class="format-number custom-disabled" /></td>
+             <td data-label="Số hộ tham gia"><input type="text" value="${formatNumber(item.NUM_PARTICIPATE)}" disabled  class="format-number custom-disabled"  /></td>
+                     `;
+        }
+        else if (type === "month-detail") {
+            let submitButton = document.querySelector("#info-month-detail");
+            if (submitButton) {
+                submitButton.style.display = "block";
+            }
+            const monthInput = document.getElementById('rpt-month');
+            if (monthInput) {
+                monthInput.value = convertMonth2(item.MONTH);
+            }
+
+            const totalAmountInput = document.getElementById('rpt-total-amount');
+            if (totalAmountInput) {
+                totalAmountInput.value = formatNumber(item.TOTAL_AMOUNT);
+            }
+
+            const khwTotalInput = document.getElementById('rpt-kwh-total');
+            if (khwTotalInput) {
+                khwTotalInput.value = formatNumber(item.TOTAL_AMOUNT);
+            }
+
+            const manaFeeInput = document.getElementById('rpt-management-fee');
+            if (manaFeeInput) {
+                manaFeeInput.value = formatNumber(item.MANAFEE);
+            }
+
+            const khwAmonthInput = document.getElementById('rpt-kwh-amount');
+            if (khwAmonthInput) {
+                khwAmonthInput.value = formatNumber(item.KWH_AMOUNT);
+            }
+
+
+            tr.innerHTML = `
+              <td data-label="Mã hộ"><input type="text" value="${item.ID}" disabled  class="custom-disabled"  /></td>
+                 <td data-label="Số điện sử dụng"><input type="text" value="${formatNumber(item.CONSUMPTION)}" disabled  class="format-number custom-disabled"  /></td>
+                 <td data-label="Số tiền phải đóng"><input type="text" value="${formatNumber(item.AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
+                         `;
+        }
+        else if (type === "customers") {
+            tr.innerHTML = `
+            <td data-label="Tháng"><input type="text" value="${convertMonth2(item.MONTH)}" disabled class="active-household  custom-disabled" /></td>
+              <td data-label="Mã hộ"><input type="text" value="${item.ID}" disabled  class="custom-disabled"  /></td>
+                 <td data-label="Số cũ"><input type="text" value="${formatNumber(item.OLD_NUMBER)}" disabled  class="format-number custom-disabled"  /></td>
+                 <td data-label="Số mới"><input type="text" value="${formatNumber(item.NEW_NUMBER)}" disabled  class="format-number custom-disabled"  /></td>
+                 <td data-label="Số điện sử dụng"><input type="text" value="${formatNumber(item.CONSUMPTION)}" disabled  class="format-number custom-disabled"  /></td>
+                 <td data-label="Số tiền phải đóng"><input type="text" value="${formatNumber(item.AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
+                         `;
+
+        }
+        tbody.appendChild(tr);
+    });
+
+}
+
+async function viewReport() {
+    let v_select = document.getElementById("report-type").value;
+    let v_input = "";
+
+    if (v_select === "month-detail") {
+        v_input = document.getElementById("report-month")?.value || "";
+        v_input = convertMonth(v_input)
+        if (!v_input) {
+            alert("Vui lòng chọn tháng để xem báo cáo!");
+            return;
+        }
+    } else if (v_select === "customers") {
+        v_input = document.getElementById("customer-id")?.value.trim() || "";
+        if (!v_input) {
+            alert("Vui lòng nhập mã khách hàng!");
+            return;
+        }
+    }
+
+    // Gọi API nếu dữ liệu hợp lệ
+    let data = await getDataRpt(v_select, v_input);
+    genRpt(v_select, data)
+}
+
 
 // --------------------- Gửi thông báo ---------------------
 function sendNotifications() {
     alert('Chức năng chưa hoàn thiện');
-    //     const monthInput = document.getElementById('notification-month').value;
-    //     if (!monthInput) {
-    //         alert('Vui lòng chọn tháng/năm để gửi thông báo.');
-    //         return;
-    //     }
-    //     getBills().then(bills => {
-    //         const billRecord = bills.find(b => b.MONTH === monthInput);
-    //         if (!billRecord) {
-    //             alert(`Không có dữ liệu cho tháng ${monthInput} để gửi thông báo.`);
-    //             return;
-    //         }
-    //         getHouseholds().then(households => {
-    //             billRecord.DETAILS.forEach(detail => {
-    //                 const household = households.find(h => h.ID === detail.code);
-    //                 if (household) {
-    //                     console.log(`Gửi thông báo tới ${household.EMAIL}:
-    //   Phí quản lý: ${billRecord.MANAFEE}
-    //   Tổng tiền: ${billRecord.TOTAL_AMOUNT}
-    //   Điện tiêu thụ: ${detail.consumption}
-    //   Thành tiền: ${detail.amount}`);
-    //                     // Tích hợp API gửi email thực tế nếu cần
-    //                 }
-    //             });
-    //             alert('Thông báo đã được gửi (giả lập).');
-    //         });
-    //     });
 }
