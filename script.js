@@ -103,8 +103,8 @@ function getPayment() {
 }
 // --------------------- Các hàm lưu trữ dữ liệu qua Google Sheets ---------------------
 // Chú ý: Thay đổi SCRIPT_URL thành URL Web App đã triển khai từ Render
-// const SCRIPT_URL = "https://electricity-management-server.onrender.com/api";
-const SCRIPT_URL = " http://localhost:3000/api"
+const SCRIPT_URL = "https://electricity-management-server.onrender.com/api";
+// const SCRIPT_URL = " http://localhost:3000/api"
 // Lấy danh sách HOUSESHOLDS từ Google Sheets
 async function getHouseholds(type) {
     isLoading(true)
