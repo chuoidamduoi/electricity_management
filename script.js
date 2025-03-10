@@ -780,10 +780,10 @@ async function loadPayment() {
         ${select_payment == 'NO' ?
                     `<td data-label="Thanh toán" class="highlight"><input type="checkbox" ${item.ISPAYMENT == 'Y' ? 'checked' : ''} class="custom-checkbox" /></td>`
                     : ''}       
-        <td data-label="Link" class="flex">
+        <td class="flex w100">
             <div class="info">
                 <a href="${item.LINK}" target="_blank">Thông tin hóa đơn</a>
-                <button class="danger" onclick="copyDataPayment('${item.LINK}')" >Copy</button>
+                <button class="normal" onclick="copyDataPayment('${item.LINK}')" >Copy</button>
             </div>
         </td>
                 `;
@@ -805,7 +805,7 @@ async function savePayment() {
 
 function copyDataPayment(link) {
     navigator.clipboard.writeText(link).then(() => {
-        alert('Link copied to clipboard!');
+        alert('Đã sao chép link!');
     }).catch(err => {
         console.error('Failed to copy: ', err);
     });
