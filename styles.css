@@ -286,6 +286,13 @@ select,[type=text] {
   margin-top: 10px;
 }
 
+.custom-checkbox{
+  width: 100% !important;
+  top: 10px;
+}
+#dataPayment .highlight{
+  background-color: aqua;
+}
 /* Responsive Table */
 @media only screen and (max-width: 768px) {
 
@@ -343,6 +350,13 @@ select,[type=text] {
 
   [type=text] {
     height: auto !important;
+  }
+  td .info {
+    width: 60% !important;
+    position: absolute;
+    right: 0;
+    top: 0;
+    box-sizing: border-box;
   }
 }
 

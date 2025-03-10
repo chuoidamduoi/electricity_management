@@ -1,11 +1,15 @@
 // --------------------- Khi trang DOM đã tải xong ---------------------
 let curBills
 let select_households = ''
+let select_payment = ''
+let dataChangePayment = []
 document.addEventListener('DOMContentLoaded', () => {
     setNavigationSection();
     setDefaultMonth();
     setDefaultSelectHouseHold('ACTIVE');
+    setDefaultSelectPayment('NO')
     loadHouseholds(); // Load danh sách hộ khi trang tải
+    setShowPaymentBtn('none')
 
 });
 
@@ -66,6 +70,36 @@ function getUnActiveHousehold() {
     select_households = 'UNACTIVE'
     setDefaultSelectHouseHold(select_households)
     loadHouseholds(select_households);
+}
+
+function setDefaultSelectPayment(type) {
+    let activeBtn = document.querySelector('button[onclick="getPayment()"]');
+    let unactiveBtn = document.querySelector('button[onclick="getNotPayment()"]');
+    if (type === "YES") {
+        activeBtn.classList.add("active");
+        unactiveBtn.classList.remove("active");
+    } else if (type === "NO") {
+        unactiveBtn.classList.add("active");
+        activeBtn.classList.remove("active");
+    }
+    select_payment = type
+}
+
+function setShowPaymentBtn(status) {
+    // console.log("setShowPaymentBtn", status)
+    let savePaymentBtn = document.getElementById("save-payment");
+    savePaymentBtn.style.display = status;
+}
+
+function getNotPayment() {
+    select_payment = 'NO'
+    setDefaultSelectPayment(select_payment)
+    loadPayment(select_payment);
+}
+function getPayment() {
+    select_payment = 'YES'
+    setDefaultSelectPayment(select_payment)
+    loadPayment(select_payment);
 }
 // --------------------- Các hàm lưu trữ dữ liệu qua Google Sheets ---------------------
 // Chú ý: Thay đổi SCRIPT_URL thành URL Web App đã triển khai từ Render
@@ -205,6 +239,50 @@ async function getDataRpt(type, input) {
     }
 }
 
+// Lấy danh sách Payment từ Google Sheets
+async function getDataPayment(strMonth, status) {
+    isLoading(true)
+    try {
+        let url = status == 'YES' ? 'getPaymentByMonth' : 'getNotPaymentByMonth';
+
+        const response = await fetch(`${SCRIPT_URL}/${url}/${strMonth}`);
+        const rs = await response.json();
+        isLoading(false)
+        if (rs.success) {
+            return rs.data;
+        }
+        else return []
+    } catch (error) {
+        isLoading(false)
+        console.error("Error fetching payments:", error);
+        return [];
+    }
+}
+
+// Lấy danh sách Payment từ Google Sheets
+async function setDataPayment() {
+    isLoading(true)
+    try {
+        const response = await fetch(`${SCRIPT_URL}/editPayment`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dataChangePayment)
+        });
+
+        const result = await response.text();
+        console.log(response);
+        isLoading(false)
+        dataChangePayment = []
+        return result;
+    } catch (error) {
+        isLoading(false)
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
 // --------------------- Xử lý định dạng cho các input số ---------------------
 // --------------------- Hàm định dạng số (thêm dấu phẩy) ---------------------
 function formatNumber(num) {
@@ -276,6 +354,18 @@ function isSave(isSave) {
         submitButton.style.display = isSave ? "block" : "none";
     }
 }
+function getCurrentDate() {
+    const date = new Date();
+
+    // Get the day, month, and year
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = date.getFullYear();
+
+    // Format the date as dd/mm/yyyy
+    const formattedDate = `${day}/${month}/${year}`
+    return formattedDate;
+}
 // --------------------- Kiểm tra các ô input điện ---------------------
 function validateElectricityInputs() {
     let inputs = document.querySelectorAll("#bill-list input");
@@ -299,6 +389,25 @@ function validateElectricityInputs() {
 document.addEventListener("input", function (event) {
     if (event.target.closest("#bill-list")) {
         validateElectricityInputs();
+    }
+    if (event.target.classList.contains('custom-checkbox')) {
+        const checkbox = event.target;
+        const itemID = checkbox.closest('tr').querySelector('input[type="text"]').value;
+        const isChecked = checkbox.checked ? 'Y' : 'N';
+        const billMonth = document.getElementById('payment-month').value;
+
+        let strMonth = convertMonth(billMonth)
+
+        console.log(`Payment status for ${itemID} changed to: ${isChecked}`);
+
+        // Update the dataChangePayment array
+        const existingItem = dataChangePayment.find(payment => payment.ID === itemID);
+        if (existingItem) {
+            existingItem.ISPAYMENT = isChecked;
+        } else {
+            dataChangePayment.push({ ID: itemID, ISPAYMENT: isChecked, MONTH: strMonth });
+        }
+
     }
 });
 // --------------------- Quản lý điện ---------------------
@@ -433,31 +542,39 @@ async function loadHouseholds() {
     const households = await getHouseholds(select_households);
     const tbody = document.getElementById('household-list');
     tbody.innerHTML = '';
-    households.forEach(household => {
+    if (households.length == 0) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-        <td data-label="Mã Hộ"><input type="text" value="${household.ID}" disabled class="custom-disabled" /></td>
-         <td data-label="Họ tên"><input type="text" value="${household.FULLNAME}" disabled  class="active-household custom-disabled"/></td>
-          <td data-label="Số Hec"><input type="text" value="${household.HECTA}" disabled  class="custom-disabled"  /></td>
-           <td data-label="Ngày thgia"><input type="text" value="${convertDate(household.JOINDATE)}" disabled  class="custom-disabled"  /></td>
-            <td data-label="Trạng thái"><input type="text" value="${household.STATUS}" disabled   class="custom-disabled" /></td>
-             <td data-label="Email"><input type="text" value="${household.EMAIL}" disabled  class="custom-disabled"  /></td>
-                      <td id="mobile-btn">
-                        <button onclick="editHousehold('${household.ID}')" class="warning">Sửa</button>
-                        <button onclick="changeStatusHousehold('${household.ID}')" class="danger">Đổi trạng thái</button>
-                      </td>`;
+        tr.innerHTML = `<td data-label="Không có dữ liệu"></td>`
         tbody.appendChild(tr);
-    });
+    } else {
+        households.forEach(household => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td data-label="Mã Hộ"><input type="text" value="${household.ID}" disabled class="custom-disabled" /></td>
+        <td data-label="Họ tên"><input type="text" value="${household.FULLNAME}" disabled  class="active-household custom-disabled"/></td>
+        <td data-label="Nhóm"><input type="text" value="${household.GROUP}" disabled  class="active-household custom-disabled"/></td>
+        <td data-label="Số Hec"><input type="text" value="${household.HECTA}" disabled  class="custom-disabled"  /></td>
+        <td data-label="Ngày thgia"><input type="text" value="${convertDate(household.JOINDATE)}" disabled  class="custom-disabled"  /></td>
+        <td data-label="Trạng thái"><input type="text" value="${household.STATUS}" disabled   class="custom-disabled" /></td>
+        <td data-label="Email"><input type="text" value="${household.EMAIL}" disabled  class="custom-disabled"  /></td>
+        <td id="mobile-btn">
+            <button onclick="editHousehold('${household.ID}')" class="warning">Sửa</button>
+            <button onclick="changeStatusHousehold('${household.ID}')" class="danger">Đổi trạng thái</button>
+        </td>`;
+            tbody.appendChild(tr);
+        });
+    }
 }
 
 async function addHousehold() {
     const name = prompt('Nhập họ tên hộ:');
     if (!name) return;
+    const group = prompt('Nhập Nhóm (1/2/3):');
     const hecta = prompt('Nhập số hecta:');
-    const joinDate = prompt('Nhập ngày tham gia (DD/MM/YYYY):', new Date().toISOString().slice(0, 10));
+    const joinDate = prompt('Nhập ngày tham gia (DD/MM/YYYY):', getCurrentDate());
     const status = prompt('Nhập trạng thái (Hoạt động/Không hoạt động):', 'Hoạt động');
     const email = prompt('Nhập email:');
-    let item = { FULLNAME: name, HECTA: hecta, JOINDATE: joinDate, STATUS: status, EMAIL: email };
+    let item = { FULLNAME: name, HECTA: hecta, JOINDATE: joinDate, STATUS: status, EMAIL: email, GROUP: group };
     await callAddHouseholds(item);
     alert('Lưu dữ liệu thành công!');
     loadHouseholds();
@@ -469,6 +586,7 @@ async function editHousehold(code) {
     if (index === -1) return;
     let household = households[index];
     const name = prompt('Sửa họ tên hộ:', household.FULLNAME);
+    const group = prompt('Sửa nhóm:', household.GROUP);
     const hecta = prompt('Sửa số hecta:', household.HECTA);
     const joinDate = prompt('Sửa ngày tham gia (DD/MM/YYYY):', convertDate(household.JOINDATE));
     const email = prompt('Sửa email:', household.EMAIL);
@@ -476,6 +594,7 @@ async function editHousehold(code) {
     if (hecta) household.HECTA = hecta;
     if (joinDate) household.JOINDATE = joinDate;
     if (email) household.EMAIL = email;
+    if (group) household.GROUP = group;
 
     await callEditHouseholds(household);
     alert('Cập nhật dữ liệu thành công!');
@@ -536,10 +655,15 @@ function genRpt(type, data) {
 
     const tbody = document.getElementById('report-results');
     tbody.innerHTML = '';
-    data.forEach(item => {
+    if (data.length == 0) {
         const tr = document.createElement('tr');
-        if (type == 'overview') {
-            tr.innerHTML = `
+        tr.innerHTML = `<td data-label="Không có dữ liệu"></td>`
+        tbody.appendChild(tr);
+    } else {
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            if (type == 'overview') {
+                tr.innerHTML = `
         <td data-label="Tháng"><input type="text" value="${convertMonth2(item.MONTH)}" disabled class="active-household  custom-disabled" /></td>
          <td data-label="Phí quản lý/kwh"><input type="text" value="${formatNumber(item.MANAFEE)}" disabled  class="format-number custom-disabled"/></td>
           <td data-label="Giá 1kwh"><input type="text" value="${formatNumber(item.KWH_AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
@@ -547,46 +671,46 @@ function genRpt(type, data) {
             <td data-label="Tổng điện tiêu thụ "><input type="text" value="${formatNumber(item.TOTAL_COMSUMPTION)}" disabled   class="format-number custom-disabled" /></td>
              <td data-label="Số hộ tham gia"><input type="text" value="${formatNumber(item.NUM_PARTICIPATE)}" disabled  class="format-number custom-disabled"  /></td>
                      `;
-        }
-        else if (type === "month-detail") {
-            let submitButton = document.querySelector("#info-month-detail");
-            if (submitButton) {
-                submitButton.style.display = "block";
             }
-            const monthInput = document.getElementById('rpt-month');
-            if (monthInput) {
-                monthInput.value = convertMonth2(item.MONTH);
-            }
+            else if (type === "month-detail") {
+                let submitButton = document.querySelector("#info-month-detail");
+                if (submitButton) {
+                    submitButton.style.display = "block";
+                }
+                const monthInput = document.getElementById('rpt-month');
+                if (monthInput) {
+                    monthInput.value = convertMonth2(item.MONTH);
+                }
 
-            const totalAmountInput = document.getElementById('rpt-total-amount');
-            if (totalAmountInput) {
-                totalAmountInput.value = formatNumber(item.TOTAL_AMOUNT);
-            }
+                const totalAmountInput = document.getElementById('rpt-total-amount');
+                if (totalAmountInput) {
+                    totalAmountInput.value = formatNumber(item.TOTAL_AMOUNT);
+                }
 
-            const khwTotalInput = document.getElementById('rpt-kwh-total');
-            if (khwTotalInput) {
-                khwTotalInput.value = formatNumber(item.TOTAL_AMOUNT);
-            }
+                const khwTotalInput = document.getElementById('rpt-kwh-total');
+                if (khwTotalInput) {
+                    khwTotalInput.value = formatNumber(item.TOTAL_AMOUNT);
+                }
 
-            const manaFeeInput = document.getElementById('rpt-management-fee');
-            if (manaFeeInput) {
-                manaFeeInput.value = formatNumber(item.MANAFEE);
-            }
+                const manaFeeInput = document.getElementById('rpt-management-fee');
+                if (manaFeeInput) {
+                    manaFeeInput.value = formatNumber(item.MANAFEE);
+                }
 
-            const khwAmonthInput = document.getElementById('rpt-kwh-amount');
-            if (khwAmonthInput) {
-                khwAmonthInput.value = formatNumber(item.KWH_AMOUNT);
-            }
+                const khwAmonthInput = document.getElementById('rpt-kwh-amount');
+                if (khwAmonthInput) {
+                    khwAmonthInput.value = formatNumber(item.KWH_AMOUNT);
+                }
 
 
-            tr.innerHTML = `
+                tr.innerHTML = `
               <td data-label="Mã hộ"><input type="text" value="${item.ID}" disabled  class="custom-disabled"  /></td>
                  <td data-label="Số điện sử dụng"><input type="text" value="${formatNumber(item.CONSUMPTION)}" disabled  class="format-number custom-disabled"  /></td>
                  <td data-label="Số tiền phải đóng"><input type="text" value="${formatNumber(item.AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
                          `;
-        }
-        else if (type === "customers") {
-            tr.innerHTML = `
+            }
+            else if (type === "customers") {
+                tr.innerHTML = `
             <td data-label="Tháng"><input type="text" value="${convertMonth2(item.MONTH)}" disabled class="active-household  custom-disabled" /></td>
               <td data-label="Mã hộ"><input type="text" value="${item.ID}" disabled  class="custom-disabled"  /></td>
                  <td data-label="Số cũ"><input type="text" value="${formatNumber(item.OLD_NUMBER)}" disabled  class="format-number custom-disabled"  /></td>
@@ -595,9 +719,10 @@ function genRpt(type, data) {
                  <td data-label="Số tiền phải đóng"><input type="text" value="${formatNumber(item.AMOUNT)}" disabled  class="format-number custom-disabled"  /></td>
                          `;
 
-        }
-        tbody.appendChild(tr);
-    });
+            }
+            tbody.appendChild(tr);
+        });
+    }
 
 }
 
@@ -627,6 +752,61 @@ async function viewReport() {
 
 
 // --------------------- Gửi thông báo ---------------------
-function sendNotifications() {
-    alert('Chức năng chưa hoàn thiện');
+async function loadPayment() {
+    const billMonth = document.getElementById('payment-month').value;
+    if (!billMonth) {
+        alert('Vui lòng chọn tháng.');
+        return;
+    }
+    let strMonth = convertMonth(billMonth)
+
+    const dataPayment = await getDataPayment(strMonth, select_payment)
+
+    const tbody = document.getElementById('dataPayment');
+    tbody.innerHTML = '';
+    if (data.length == 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td data-label="Không có dữ liệu"></td>`
+        tbody.appendChild(tr);
+    } else {
+        dataPayment.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td data-label="Mã Hộ"><input type="text" value="${item.ID}" disabled class="custom-disabled" /></td>
+        <td data-label="Họ tên"><input type="text" value="${item.FULLNAME}" disabled  class="active-household custom-disabled"/></td>
+        <td data-label="Số điện tiêu thụ"><input type="text" value="${formatNumber(item.CONSUMPTION)}" disabled  class="custom-disabled"  /></td>
+        <td data-label="Số tiền/kwh"><input type="text" value="${formatNumber(item.KWH_AMOUNT)}" disabled  class="custom-disabled"  /></td>
+        <td data-label="Số tiền phải trả"><input type="text" value="${formatNumber(item.AMOUNT)}" disabled   class="custom-disabled" /></td>
+        ${select_payment == 'NO' ?
+                    `<td data-label="Thanh toán" class="highlight"><input type="checkbox" ${item.ISPAYMENT == 'Y' ? 'checked' : ''} class="custom-checkbox" /></td>`
+                    : ''}       
+        <td data-label="Link" class="flex">
+            <div class="info">
+                <a href="${item.LINK}" target="_blank">Thông tin hóa đơn</a>
+                <button class="danger" onclick="copyDataPayment('${item.LINK}')" >Copy</button>
+            </div>
+        </td>
+                `;
+            tbody.appendChild(tr);
+
+        })
+    }
+
+    if (select_payment == 'NO') setShowPaymentBtn('block')
+    else setShowPaymentBtn('none')
+}
+
+async function savePayment() {
+    if (dataChangePayment.length > 0) {
+        await setDataPayment()
+        await loadPayment()
+    } else alert('Không có thay đổi nào, vui lòng kiểm tra lại!');
+}
+
+function copyDataPayment(link) {
+    navigator.clipboard.writeText(link).then(() => {
+        alert('Link copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
 }

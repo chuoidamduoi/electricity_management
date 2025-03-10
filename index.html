@@ -16,10 +16,10 @@
     </header>
     <nav>
         <ul>
-            <li><a href="#" data-target="manage-bills" class="active">Quản lý tiền điện</a></li>
+            <li><a href="#" data-target="manage-bills" class="active">Tính tiền điện</a></li>
+            <li><a href="#" data-target="payment">Thanh toán tiền điện</a></li>
             <li><a href="#" data-target="manage-households">Quản lý hộ</a></li>
             <li><a href="#" data-target="reports">Báo cáo</a></li>
-            <li><a href="#" data-target="notifications">Gửi thông báo</a></li>
         </ul>
     </nav>
     <main>
@@ -53,7 +53,8 @@
 
         <!-- Section Quản lý tiền điện -->
         <section id="manage-bills" class="section-content active-section">
-            <h2>Quản Lý Tiền Điện</h2>
+            <h2>Tính Tiền Điện</h2>
+
             <div>
                 <label for="bill-month">Chọn tháng: </label>
                 <div class="flex">
@@ -163,16 +164,36 @@
 
         </section>
 
-        <!-- Section Gửi thông báo -->
-        <section id="notifications" class="section-content">
-            <h2>Gửi Thông Báo</h2>
-            <div class="flex">
-                <div class="w50">
-                    <input type="month" id="notification-month" />
+        <!-- Section Danh sach thanh toan -->
+        <section id="payment" class="section-content">
+            <h2>Thanh toán tiền điện</h2>
+            <div class="select-households">
+                <button onclick="getNotPayment()">DS chưa nộp</button>
+                <button onclick="getPayment()">DS đã nộp</button>
+            </div>
+            <div>
+                <label for="bill-month">Chọn tháng: </label>
+                <div class="flex">
+                    <input type="month" id="payment-month" />
+                    <button onclick="loadPayment()" class="py-10px">Tải danh sách</button>
                 </div>
-                <div class="w50">
-                    <button onclick="sendNotifications()">Gửi Thông Báo</button>
-                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Hộ</th>
+                            <th>Họ Tên</th>
+                            <th>Số điện tiêu thụ</th>
+                            <th>Số tiền/kwh</th>
+                            <th>Số tiền phải trả</th>
+                            <th>Thanh toán</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataPayment">
+                        <!-- Các hàng sẽ được thêm động qua JavaScript -->
+                    </tbody>
+                </table>
+                <button onclick="savePayment()" id="save-payment" class="py-10px warning save-button">Lưu</button>
+
             </div>
         </section>
 
