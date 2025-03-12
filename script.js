@@ -783,7 +783,7 @@ async function loadPayment() {
         <td class="flex w100">
             <div class="info">
                 <a href="${item.LINK}" target="_blank">Thông tin hóa đơn</a>
-                <button class="normal" onclick="copyDataPayment('${item.LINK}')" >Copy</button>
+                <button class="normal" onclick="shareZalo('${item.LINK}')" >Chia sẻ qua Zalo</button>
             </div>
         </td>
                 `;
@@ -801,6 +801,13 @@ async function savePayment() {
         await setDataPayment()
         await loadPayment()
     } else alert('Không có thay đổi nào, vui lòng kiểm tra lại!');
+}
+
+function shareZalo(link) {
+    var url = encodeURIComponent(link);
+    var text = encodeURIComponent("Hóa đơn tiền điện");
+    var shareUrl = `https://zalo.me/share?url=${url}&text=${text}`;
+    window.open(shareUrl, "_blank");
 }
 
 function copyDataPayment(link) {
