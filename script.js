@@ -803,12 +803,29 @@ async function savePayment() {
     } else alert('Không có thay đổi nào, vui lòng kiểm tra lại!');
 }
 
+// function shareZalo(link) {
+//     var url = encodeURIComponent(link);
+//     var text = encodeURIComponent("Hóa đơn tiền điện");
+//     var shareUrl = `https://zalo.me/share?url=${url}&text=${text}`;
+//     window.open(shareUrl, "_blank");
+// }
+
 function shareZalo(link) {
     var url = encodeURIComponent(link);
     var text = encodeURIComponent("Hóa đơn tiền điện");
-    var shareUrl = `https://zalo.me/share?url=${url}&text=${text}`;
-    window.open(shareUrl, "_blank");
+
+    // Kiểm tra nếu là thiết bị di động thì dùng zalo://
+    var userAgent = navigator.userAgent || navigator.vendor;
+    if (/android/i.test(userAgent)) {
+        window.location.href = `intent://share?url=${url}#Intent;scheme=zalo;package=com.zing.zalo;end;`;
+    } else if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+        window.location.href = `zalo://share?url=${url}`;
+    } else {
+        // Nếu là máy tính thì mở trang web Zalo
+        window.open(`https://zalo.me/share?url=${url}&text=${text}`, "_blank");
+    }
 }
+
 
 function copyDataPayment(link) {
     navigator.clipboard.writeText(link).then(() => {
