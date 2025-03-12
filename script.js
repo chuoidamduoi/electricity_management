@@ -783,7 +783,7 @@ async function loadPayment() {
         <td class="flex w100">
             <div class="info">
                 <a href="${item.LINK}" target="_blank">Thông tin hóa đơn</a>
-                <button class="normal" onclick="shareZalo('${item.LINK}')" >Chia sẻ qua Zalo</button>
+                <button class="normal" onclick="copyDataPayment('${item.LINK}')" >Chia sẻ qua Zalo</button>
             </div>
         </td>
                 `;
